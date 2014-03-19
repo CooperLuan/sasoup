@@ -71,3 +71,7 @@
 6. 如果需要对目标字段的匹配结果进一步处理，则添加到 `result_filters`
 
    可添加 `eval` 参数进行处理
+
+## TODO
+
+1. verify rules
