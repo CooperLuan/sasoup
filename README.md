@@ -2,6 +2,8 @@
 
 `sasoup` is a html parser base on `xpath`/`re`
 
+## example
+
 ## how to write rules
 
 1. full rules type
