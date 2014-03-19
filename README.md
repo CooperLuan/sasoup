@@ -2,6 +2,14 @@
 
 `sasoup` is a html parser base on `xpath`/`re`
 
+## requirement
+
+    ```sh
+    pip install pyyaml
+    pip install lxml
+    pip install tornado
+    ```
+
 ## example
 
 ## how to write rules
