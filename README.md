@@ -4,11 +4,11 @@
 
 ## requirement
 
-    ```sh
-    pip install pyyaml
-    pip install lxml
-    pip install tornado
-    ```
+  ```sh
+  pip install pyyaml
+  pip install lxml
+  pip install tornado
+  ```
 
 ## example
 
