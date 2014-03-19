@@ -20,7 +20,7 @@ top_item_base = {
     'url_fmt': 'http://item.taobao.com/item.htm?id={iid}',
     'page_rules': (
         search(r'siteId=\d'),
-        xpath("//div[@id='LineZing']"),
+        xpath("//div[@id='LineZing']/@itemid"),
     ),
     'template_rules': {
         'B': (
@@ -392,7 +392,7 @@ top_item = {
     'template_target': {
         'B': top_tmallitem,
         'C': top_citem,
-    }
+    },
 }
 
 

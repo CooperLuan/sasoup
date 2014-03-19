@@ -11,8 +11,8 @@ from requests import Session
 from lxml import etree
 
 from examples.topitem import top_item as top_item_rules
-from ibdparser.parser import Parser, AjaxParser
-from ibdparser.baserules import *
+from sasoup.parser import Parser, AjaxParser
+from sasoup.baserules import *
 
 redis_svr_conf = {'host': '115.29.174.125'}
 re_conn = redis.StrictRedis(**redis_svr_conf)
@@ -81,8 +81,8 @@ def test_topitem():
     global session, session_file
     iid = 18878183440
     # iid = 23938544082
-    iid = 13070844167
-    # iid = 37467127858
+    # iid = 13070844167
+    iid = 37884427476
     url = 'http://detail.tmall.com/item.htm?id=%s' % iid
     url = 'http://item.taobao.com/item.htm?id=%s' % iid
     session_file = '/home/cooper/session_taobao_%s' % iid
@@ -92,7 +92,7 @@ def test_topitem():
         session = Session()
 
     html = url_get(url)
-    results = dict(Parser(html, top_item_rules, 'GBK').parse())
+    results = dict(Parser(html, top_item_rules, 'GBK').parse('starts'))
 
     html_ajax = {}
     for key in (
@@ -116,8 +116,11 @@ def test_topitem():
         if html_ajax.get(url):
             html = html_ajax.get(url)
         else:
-            html = url_get(url)
-            html_ajax[url] = html
+            try:
+                html = url_get(url)
+                html_ajax[url] = html
+            except:
+                continue
         results.update({key: AjaxParser(html, rule).parse()})
 
     for key, result in results.items():

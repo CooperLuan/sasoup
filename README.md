@@ -7,7 +7,6 @@
   ```sh
   pip install pyyaml
   pip install lxml
-  pip install tornado
   ```
 
 ## example

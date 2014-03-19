@@ -1,18 +1,19 @@
 # encoding: utf8
 import traceback
 import logging
-logging.basicConfig(level=logging.INFO)
 import re
 from StringIO import StringIO
 from string import Formatter
 from urllib import unquote, urlencode, quote
 from urlparse import urlparse, parse_qsl, urlunparse
 
+from .escape import xhtml_unescape
+from .baserules import *
+from .exceptions import InvalidPageError, TemplateParseError, TemplateNotFoundError, \
+    FieldParseError, InvalidFieldError, InvalidRuleError
+
 import yaml
 from lxml import etree
-from tornado.escape import xhtml_unescape
-
-from .baserules import *
 
 parser = etree.HTMLParser()
 
@@ -331,18 +332,24 @@ class Parser(object):
         for key, rule in self._rules.get('base_fields', {}).items():
             if rule is None:
                 continue
-            result = self.parse_all_types(self._html, self.tree, key, rule)
+            try:
+                result = self.parse_all_types(self._html, self.tree, key, rule)
+            except:
+                raise FieldParseError('failed to parse field %s' % key)
             if result is None:
-                raise Exception('failed to parse base field %s with rule %s' % (key, rule))
+                raise FieldParseError('failed to parse base field %s with rule %s' % (key, rule))
             self.fields_base[key] = result
             self.fields_global[key] = result
 
     def parse_addon_fields(self):
         for key, rule in self._rules['addon_fields'].items():
-            logging.debug('start to parse addon field %s' % key)
+            logging.info('start to parse addon field %s' % key)
             if rule is None:
                 continue
-            result = self.parse_all_types(self._html, self.tree, key, rule)
+            try:
+                result = self.parse_all_types(self._html, self.tree, key, rule)
+            except:
+                raise FieldParseError('failed to parse addon field %s with rule %s' % (key, rule))
             # if result is None:
             #     raise Exception('failed to parse base field %s with rule %s' % (key, rule))
             self.fields_addon[key] = result
@@ -369,22 +376,25 @@ class Parser(object):
         """generate ajax url in ajax_rules"""
         for key, ajax in self._rules['ajax_rules'].items():
             host, kwargs = ajax.host, ajax.kwargs
-            logging.debug('star to parse ajax url of %s' % key)
+            logging.info('star to parse ajax url of %s' % key)
             # host
-            if not isinstance(host, (str, unicode)):
-                host = self.parse_all_types(self._html, self.tree, key, host)
-            # kwargs
-            for k, v in kwargs.items():
-                if not isinstance(v, (str, unicode)):
-                    kwargs[k] = self.parse_all_types(self._html, self.tree, k, v)
-            # join
-            url = host and self._url_join(host, **kwargs) or None
-            self.fields_ajax_urls[key] = {
-                'url': url,
-                'resp': ajax.resp,
-                'evalx': ajax.evalx}
+            try:
+                if not isinstance(host, (str, unicode)):
+                    host = self.parse_all_types(self._html, self.tree, key, host)
+                # kwargs
+                for k, v in kwargs.items():
+                    if not isinstance(v, (str, unicode)):
+                        kwargs[k] = self.parse_all_types(self._html, self.tree, k, v)
+                # join
+                url = host and self._url_join(host, **kwargs) or None
+                self.fields_ajax_urls[key] = {
+                    'url': url,
+                    'resp': ajax.resp,
+                    'evalx': ajax.evalx}
+            except:
+                raise FieldParseError('failed to parse ajax url of %s' % key)
 
-    def parse_results(self):
+    def parse_results(self, requires):
         """parse k-v result in result_rules"""
         for key, rule in self._rules['result_rules'].items():
             if rule is None:
@@ -395,8 +405,11 @@ class Parser(object):
                 self.fields_results[key] = result
             except:
                 result = None
-                logging.error('failed to parse result of %s' % key)
+                logging.warning('failed to parse result of %s' % key)
                 logging.error(traceback.format_exc())
+            finally:
+                if result is None and key in requires:
+                    raise FieldParseError('failed to parse field %s' % key)
             yield key, result
 
     def parse_result_filter(self, key, result):
@@ -417,11 +430,24 @@ class Parser(object):
                     if parse_search(self._html, rule, fields_global=self.fields_global) is None:
                         break
                 else:
+                    logging.info('switch to template %s' % template_id)
+                    self._rules = self._rules['template_target'][template_id]
                     break
-            logging.info('switch to template %s' % template_id)
-            self._rules = self._rules['template_target'][template_id]
+            else:
+                raise TemplateNotFoundError
 
-    def parse(self):
+    def verify_page(self):
+        for rule in self._rules.get('page_rules') or []:
+            logging.info('start to verify page rules')
+            try:
+                if self.parse_all_types(self._html, self.tree, None, rule) is None:
+                    raise
+            except:
+                logging.error(traceback.format_exc())
+                raise InvalidPageError
+
+    def parse(self, *fields):
+        self.verify_page()
         self.switch_template()
         if self._rules.get('base_fields'):
             self.parse_all_base()
@@ -429,7 +455,7 @@ class Parser(object):
             self.parse_addon_fields()
         if self._rules.get('ajax_rules'):
             self.parse_ajax_urls()
-        return self.parse_results()
+        return self.parse_results(requires=list(fields))
 
     def __call__(self):
         return self.parse()
