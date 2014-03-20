@@ -92,7 +92,7 @@ def test_topitem():
         session = Session()
 
     html = url_get(url)
-    results = dict(Parser(html, top_item_rules, 'GBK').parse('starts'))
+    results = dict(Parser(html, top_item_rules, 'GBK').parse())
 
     html_ajax = {}
     for key in (

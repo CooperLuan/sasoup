@@ -1,26 +1,25 @@
-# -*- coding: utf-8 -*-
 # coding: utf-8
 
 
-class InvalidPageError(BaseException):
+class InvalidPageError(Exception):
     pass
 
 
-class TemplateParseError(BaseException):
+class TemplateParseError(Exception):
     pass
 
 
-class TemplateNotFoundError(BaseException):
+class TemplateNotFoundError(Exception):
     pass
 
 
-class FieldParseError(BaseException):
+class FieldParseError(Exception):
     pass
 
 
-class InvalidFieldError(BaseException):
+class InvalidFieldError(Exception):
     pass
 
 
-class InvalidRuleError(BaseException):
+class InvalidRuleError(Exception):
     pass

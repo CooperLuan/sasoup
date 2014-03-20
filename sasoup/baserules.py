@@ -267,6 +267,10 @@ class which(MatchType):
         except IndexError:
             return
 
+    @property
+    def rules(self):
+        return self._rules
+
     def __str__(self):
         return 'which[%s]' % ', '.join([str(rule) for rule in self._rules])
 

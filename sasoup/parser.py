@@ -242,24 +242,10 @@ class Parser(object):
             return parse_xpaths(tree, rule, fields_global=self.fields_global)
 
     def parse_which(self, html, tree, rule):
-        while 1:
-            z_rule = None
-            try:
-                z_rule = rule.next_rule.next()
-            except StopIteration:
-                break
-            if z_rule.method == 'xpath':
-                result = parse_xpath(tree, z_rule, fields_global=self.fields_global)
-                if result:
-                    return result
-            elif z_rule.method == 'search':
-                result = parse_search(html, z_rule, fields_global=self.fields_global)
-                if result:
-                    return result
-            elif z_rule.method == 'fields':
-                result = self.parse_fields(html, tree, z_rule.field_key, z_rule.rule)
-                if result:
-                    return result
+        for z_rule in rule.rules:
+            result = self.parse_all_types(html, tree, None, z_rule)
+            if result is not None:
+                return result
         return None
 
     def parse_next(self, html, tree, rule):
@@ -332,12 +318,14 @@ class Parser(object):
         for key, rule in self._rules.get('base_fields', {}).items():
             if rule is None:
                 continue
+            result = None
             try:
                 result = self.parse_all_types(self._html, self.tree, key, rule)
             except:
                 raise FieldParseError('failed to parse field %s' % key)
-            if result is None:
-                raise FieldParseError('failed to parse base field %s with rule %s' % (key, rule))
+            finally:
+                if result is None:
+                    raise FieldParseError('failed to parse base field %s with rule %s' % (key, rule))
             self.fields_base[key] = result
             self.fields_global[key] = result
 
@@ -399,6 +387,7 @@ class Parser(object):
         for key, rule in self._rules['result_rules'].items():
             if rule is None:
                 continue
+            result = None
             try:
                 result = self.parse_all_types(self._html, self.tree, key, rule)
                 result = self.parse_result_filter(key, result)
@@ -406,7 +395,7 @@ class Parser(object):
             except:
                 result = None
                 logging.warning('failed to parse result of %s' % key)
-                logging.error(traceback.format_exc())
+                logging.debug(traceback.format_exc())
             finally:
                 if result is None and key in requires:
                     raise FieldParseError('failed to parse field %s' % key)
@@ -427,11 +416,14 @@ class Parser(object):
         if self._rules.get('template_rules'):
             for template_id, rules in self._rules['template_rules'].items():
                 for rule in rules:
-                    if parse_search(self._html, rule, fields_global=self.fields_global) is None:
-                        break
+                    try:
+                        if parse_search(self._html, rule, fields_global=self.fields_global) is None:
+                            break
+                    except:
+                        raise TemplateParseError
                 else:
                     logging.info('switch to template %s' % template_id)
-                    self._rules = self._rules['template_target'][template_id]
+                    self._rules.update(self._rules['template_target'][template_id])
                     break
             else:
                 raise TemplateNotFoundError
@@ -443,7 +435,7 @@ class Parser(object):
                 if self.parse_all_types(self._html, self.tree, None, rule) is None:
                     raise
             except:
-                logging.error(traceback.format_exc())
+                logging.debug(traceback.format_exc())
                 raise InvalidPageError
 
     def parse(self, *fields):
@@ -455,7 +447,8 @@ class Parser(object):
             self.parse_addon_fields()
         if self._rules.get('ajax_rules'):
             self.parse_ajax_urls()
-        return self.parse_results(requires=list(fields))
+        results = list(self.parse_results(requires=list(fields)))
+        return results
 
     def __call__(self):
         return self.parse()
