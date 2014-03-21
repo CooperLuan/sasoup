@@ -6,6 +6,7 @@
 2. fix `Parser.parse_which` bug
 3. update base class of exception from `BaseException` to `Exception`, as `BaseException` result to exit of celery worker
 4. fix some parse bugs
+5. update lxml.etree generator `gen_tree` to `lxml.etree.HTML`
 
 # v0.2
 

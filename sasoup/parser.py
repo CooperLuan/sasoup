@@ -3,7 +3,6 @@ import traceback
 import logging
 import re
 import copy
-from StringIO import StringIO
 from string import Formatter
 from urllib import unquote, urlencode, quote
 from urlparse import urlparse, parse_qsl, urlunparse
@@ -15,8 +14,6 @@ from .exceptions import InvalidPageError, TemplateParseError, TemplateNotFoundEr
 
 import yaml
 from lxml import etree
-
-parser = etree.HTMLParser()
 
 
 def _utf8(s, from_encoding=None):
@@ -35,7 +32,7 @@ def _unescape(s):
 
 def gen_tree(html):
     """generate lxml.etree object from html"""
-    return etree.parse(StringIO(html), parser)
+    return etree.HTML(html)
 
 
 def _cls_name(cls):
