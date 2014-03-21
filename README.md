@@ -11,7 +11,7 @@
 
 ## example
 
-```
+```python
 import requests
 from sasoup import Parser
 from sasoup.baserules import xpath, xpaths, xpathz, search, dpath, base, addon, fields, which
@@ -52,7 +52,7 @@ for key, result in results.items():
 
 1. full rules type
 
-   ```
+   ```python
    rules = {
        'super': None,           # 继承对象
        'page_rules': (),        # 页面规则
@@ -70,7 +70,7 @@ for key, result in results.items():
 
    basic match type `xpath/search` and complex match type `which` is allowed
 
-   ```
+   ```python
    rules = {
        'result_rules': {},
    }
@@ -82,7 +82,7 @@ for key, result in results.items():
 
    `result_rules` 增加 `fields/xpathz/dpath` 匹配方式
 
-   ```
+   ```python
    rules = {
        'fields_rules': {},
        'result_rules': {},
@@ -92,7 +92,7 @@ for key, result in results.items():
 
    `result_rules` 增加 `base/addon` 匹配方式
 
-   ```
+   ```python
    rules = {
        'super': base,
        'template_rules': {},
