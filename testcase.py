@@ -5,8 +5,8 @@ import os
 from urlparse import urlparse
 import pickle
 import json
+import unittest
 
-import redis
 from requests import Session
 from lxml import etree
 
@@ -14,8 +14,6 @@ from examples.topitem import top_item as top_item_rules
 from sasoup.parser import Parser, AjaxParser
 from sasoup.baserules import *
 
-redis_svr_conf = {'host': '115.29.174.125'}
-re_conn = redis.StrictRedis(**redis_svr_conf)
 parser = etree.HTMLParser()
 _default_encoding = 'GBK'
 
@@ -55,12 +53,9 @@ def _pty_json(j, indent=None):
 
 def url_get(url, force=False, allow_empty=False, **kwargs):
     global headers, cookies, session
-    resp = re_conn.hget('requests.get', url)
-    if resp and not force:
-        return resp.decode('utf-8')
     while 1:
         headers['Host'] = urlparse(url).netloc
-        resp = session.get(url, headers=headers, cookies=cookies, allow_redirects=False, **kwargs)
+        resp = (session or Session()).get(url, headers=headers, cookies=cookies, allow_redirects=False, **kwargs)
         if cookies is None:
             cookies = resp.cookies
         else:
@@ -71,125 +66,130 @@ def url_get(url, force=False, allow_empty=False, **kwargs):
             url = resp.headers['location']
             continue
         html = resp.content.decode(_fmt_encoding(resp.encoding)).encode('utf-8')
-        re_conn.hset('requests.get', url, html)
         if not allow_empty and not html:
             raise Exception('url_get of %s is empty' % url)
         return html.decode('utf-8')
 
 
-def test_topitem():
-    global session, session_file
-    iid = 18878183440
-    # iid = 23938544082
-    # iid = 13070844167
-    iid = 37884427476
-    url = 'http://detail.tmall.com/item.htm?id=%s' % iid
-    url = 'http://item.taobao.com/item.htm?id=%s' % iid
-    session_file = '/home/cooper/session_taobao_%s' % iid
-    if os.path.exists(session_file):
-        session = pickle.load(open(session_file, 'r'))
-    else:
-        session = Session()
+class SasoupTestCase(unittest.TestCase):
 
-    html = url_get(url)
-    results = dict(Parser(html, top_item_rules, 'GBK').parse())
-
-    html_ajax = {}
-    for key in (
-        'rateList',
-        'reviewCount',
-        'confirmGoodsItems',
-        'confirmGoods',
-        'quanity',
-        'location',
-        'tradeList',
-        'favNum',
-        'monthlyTrade',
-        'paySuccess',
-        'paySuccessItems',
-    ):
-        if results.get(key) is None:
-            continue
-        if not isinstance(results[key], dict):
-            continue
-        url, rule = results[key]['url'], results[key]['rules']
-        if html_ajax.get(url):
-            html = html_ajax.get(url)
+    @unittest.skip('if you can')
+    def test_topitem(self):
+        global session, session_file
+        iid = 37884427476
+        url = 'http://item.taobao.com/item.htm?id=%s' % iid
+        session_file = '_session/session_taobao_%s' % iid
+        if os.path.exists(session_file):
+            session = pickle.load(open(session_file, 'r'))
         else:
-            try:
-                html = url_get(url)
-                html_ajax[url] = html
-            except:
+            session = Session()
+
+        html = url_get(url)
+        results = dict(Parser(html, top_item_rules, 'GBK').parse())
+
+        html_ajax = {}
+        for key in (
+            'rateList',
+            'reviewCount',
+            'confirmGoodsItems',
+            'confirmGoods',
+            'quanity',
+            'location',
+            'tradeList',
+            'favNum',
+            'monthlyTrade',
+            'paySuccess',
+            'paySuccessItems',
+        ):
+            if results.get(key) is None:
                 continue
-        results.update({key: AjaxParser(html, rule).parse()})
+            if not isinstance(results[key], dict):
+                continue
+            url, rule = results[key]['url'], results[key]['rules']
+            if html_ajax.get(url):
+                html = html_ajax.get(url)
+            else:
+                try:
+                    html = url_get(url)
+                    html_ajax[url] = html
+                except:
+                    continue
+            results.update({key: AjaxParser(html, rule).parse()})
 
-    for key, result in results.items():
-        print '{} : {}'.format(
-            key,
-            result if not isinstance(result, (dict, list))
-            else _pty_json(result).encode('utf-8'))
+        for key, result in results.items():
+            print '{} : {}'.format(
+                key,
+                result if not isinstance(result, (dict, list))
+                else _pty_json(result).encode('utf-8'))
 
+    @unittest.skip('if you can')
+    def test_jd(self):
+        from examples.jdrules import jdrules
+        url = 'http://www.jd.com'
+        html = url_get(url)
+        for key, result in Parser(html, jdrules, 'GBK').parse():
+            print '{} : {}'.format(
+                key,
+                result if not isinstance(result, (dict, list))
+                else _pty_json(result).encode('utf-8'))
 
-def test_jd():
-    global session, session_file
-    from examples.jdrules import jdrules
-    url = 'http://www.jd.com'
-    session_file = '/home/cooper/session_jd'
-    if os.path.exists(session_file):
-        session = pickle.load(open(session_file, 'r'))
-    else:
-        session = Session()
+    @unittest.skip('if you can')
+    def test_etao(self):
+        from examples.etaorules import rules
+        url = 'http://www.etao.com'
+        html = url_get(url)
+        for key, result in Parser(html, rules, 'GBK').parse():
+            print '{} : {}'.format(
+                key,
+                result.encode('utf-8') if not isinstance(result, (dict, list))
+                else _pty_json(result).encode('utf-8'))
 
-    html = url_get(url)
-    pickle.dump(session, open(session_file, 'w'))
-    for key, result in Parser(html, jdrules, 'GBK').parse():
-        print '{} : {}'.format(
-            key,
-            result if not isinstance(result, (dict, list))
-            else _pty_json(result).encode('utf-8'))
+    @unittest.skip('if you can')
+    def test_appso(self):
+        from examples.appsorules import appsorules
+        url = 'http://www.ifanr.com/special/appso-xianmian'
+        html = url_get(url)
+        items = dict(Parser(html, appsorules, 'utf-8').parse())
+        for i in range(len(items['tsmp'])):
+            print (items['tsmp'][i] and items['tsmp'][i][0] or '').encode('utf-8')
+            print (items['title'][i] and items['title'][i][0] or '').encode('utf-8')
+            print (items['desc'][i] and items['desc'][i][0] or '').encode('utf-8')
+            print (items['intro'][i] and items['intro'][i][0] or '').encode('utf-8')
+            print
 
+    @unittest.skip('if you can')
+    def test_hackernews(self):
+        from sasoup.baserules import xpath, xpaths, xpathz, search, dpath, base, addon, fields, which
+        hacker_news = {
+            'fields_rules': {
+                'news': xpaths("//body/center/table/tr", evalx="result"),
+            },
+            'result_rules': {
+                'title': xpath("//span[@class='pagetop']/b/a"),
+                'django': search(r'\>(Django.+?)\<'),
+                'twitter': search(r'\>(Twitter.+?)\<'),
+                'elastic': xpath("//a[contains(text(),'Elasticsearch')]"),
+                'titles': xpathz(
+                    'news',
+                    xpaths(".//td[@class='title']/a")),
+                'tsmps': xpathz(
+                    'news',
+                    xpaths(".//td[@class='subtext']/node()[4]")),
+                'points': xpathz(
+                    'news',
+                    xpaths(".//td[@class='subtext']/span")),
+            },
+            'result_filters': {
+                'titles': (None, "result[2]"),
+                'tsmps': (None, "result[2]"),
+                'points': (None, "result[2]"),
+            }
+        }
 
-def test_etao():
-    global session, session_file
-    from examples.etaorules import rules
-    url = 'http://www.etao.com'
-    session_file = '/home/cooper/session_etao'
-    if os.path.exists(session_file):
-        session = pickle.load(open(session_file, 'r'))
-    else:
-        session = Session()
+        url = 'https://news.ycombinator.com/'
+        html = url_get(url)
+        results = dict(Parser(html, hacker_news, 'utf-8').parse())
+        for key, result in results.items():
+            print '{} : {}'.format(key, result)
 
-    html = url_get(url)
-    pickle.dump(session, open(session_file, 'w'))
-    for key, result in Parser(html, rules, 'GBK').parse():
-        print '{} : {}'.format(
-            key,
-            result if not isinstance(result, (dict, list))
-            else _pty_json(result).encode('utf-8'))
-
-
-def test_appso():
-    global session, session_file
-    from examples.appsorules import appsorules
-    url = 'http://www.ifanr.com/special/appso-xianmian'
-    session_file = '/home/cooper/session_appso'
-    if os.path.exists(session_file):
-        session = pickle.load(open(session_file, 'r'))
-    else:
-        session = Session()
-
-    html = url_get(url)
-    pickle.dump(session, open(session_file, 'w'))
-    items = dict(Parser(html, appsorules, 'utf-8').parse())
-    for i in range(len(items['tsmp'])):
-        print (items['tsmp'][i] and items['tsmp'][i][0] or '').encode('utf-8')
-        print (items['title'][i] and items['title'][i][0] or '').encode('utf-8')
-        print (items['desc'][i] and items['desc'][i][0] or '').encode('utf-8')
-        print (items['intro'][i] and items['intro'][i][0] or '').encode('utf-8')
-        print
-
-if __name__ == '__main__':
-    test_topitem()
-    # test_jd()
-    # test_etao()
-    # test_appso()
+unittest.main()

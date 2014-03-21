@@ -5,6 +5,7 @@
 1. add property `rules` to match type `which`
 2. fix `Parser.parse_which` bug
 3. update base class of exception from `BaseException` to `Exception`, as `BaseException` result to exit of celery worker
+4. fix some parse bugs
 
 # v0.2
 

@@ -11,6 +11,43 @@
 
 ## example
 
+```
+import requests
+from sasoup import Parser
+from sasoup.baserules import xpath, xpaths, xpathz, search, dpath, base, addon, fields, which
+hacker_news = {
+    'fields_rules': {
+        'news': xpaths("//body/center/table/tr", evalx="result"),
+    },
+    'result_rules': {
+        'title': xpath("//span[@class='pagetop']/b/a"),
+        'django': search(r'\>(Django.+?)\<'),
+        'twitter': search(r'\>(Twitter.+?)\<'),
+        'elastic': xpath("//a[contains(text(),'Elasticsearch')]"),
+        'titles': xpathz(
+            'news',
+            xpaths(".//td[@class='title']/a")),
+        'tsmps': xpathz(
+            'news',
+            xpaths(".//td[@class='subtext']/node()[4]")),
+        'points': xpathz(
+            'news',
+            xpaths(".//td[@class='subtext']/span")),
+    },
+    'result_filters': {
+        'titles': (None, "result[2]"),
+        'tsmps': (None, "result[2]"),
+        'points': (None, "result[2]"),
+    }
+}
+
+url = 'https://news.ycombinator.com/'
+html = requests.get(url).content.decode('utf-8')
+results = dict(Parser(html, hacker_news).parse())
+for key, result in results.items():
+    print '{} : {}'.format(key, result)
+```
+
 ## how to write rules
 
 1. full rules type

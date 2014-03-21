@@ -2,6 +2,7 @@
 import traceback
 import logging
 import re
+import copy
 from StringIO import StringIO
 from string import Formatter
 from urllib import unquote, urlencode, quote
@@ -76,8 +77,9 @@ def parse_search(html, rule, fields_global={}):
     s = re.search(format_rule(fields_global, rule.regx), html, re.S)
     if rule.resp == 'json':
         rule._resp = 'html'
+        result = s and _strip(s.groups() and s.group(1) or s.group()) or ''
         s = parse_search(
-            s and _strip(s.groups() and s.group(1) or s.group()) or '',
+            result,
             rule.evalx,
             fields_global=fields_global)
         s = _fmt_json_str(s)
@@ -100,7 +102,10 @@ def parse_xpath(tree, xpath, fields_global={}):
         return None
     result = result[0]
     if xpath.evalx is not None:
-        return eval(xpath.evalx)
+        result = eval(xpath.evalx)
+        if xpath.resp == 'json':
+            return yaml.load(result)
+        return result
     if _cls_name(result) == '_ElementStringResult':
         result = _strip(result)
         return _fmt_resp_filter(xpath, result)
@@ -163,7 +168,7 @@ class Parser(object):
         @param encoding(optional):  页面编码
         """
         self._html = html
-        self._rules = rules
+        self._rules = copy.deepcopy(rules)
         self._default_encoding = encoding
 
         self._tree = None
@@ -337,9 +342,9 @@ class Parser(object):
             try:
                 result = self.parse_all_types(self._html, self.tree, key, rule)
             except:
-                raise FieldParseError('failed to parse addon field %s with rule %s' % (key, rule))
-            # if result is None:
-            #     raise Exception('failed to parse base field %s with rule %s' % (key, rule))
+                logging.error(traceback.format_exc())
+                raise FieldParseError
+                logging.warning('failed to parse addon field %s with rule %s' % (key, rule))
             self.fields_addon[key] = result
             self.fields_global[key] = result
 
@@ -358,7 +363,7 @@ class Parser(object):
         else:
             raise Exception('unexcept fields_rules match type %s' % field_key)
         self.fields_vals[key] = result
-        logging.debug('key {} value {}'.format(key, result))
+        logging.debug('key {} rule {} value {}'.format(key, rule, result))
 
     def parse_ajax_urls(self):
         """generate ajax url in ajax_rules"""
@@ -380,7 +385,8 @@ class Parser(object):
                     'resp': ajax.resp,
                     'evalx': ajax.evalx}
             except:
-                raise FieldParseError('failed to parse ajax url of %s' % key)
+                # raise FieldParseError
+                logging.warning('failed to parse ajax url of %s' % key)
 
     def parse_results(self, requires):
         """parse k-v result in result_rules"""
@@ -447,7 +453,9 @@ class Parser(object):
             self.parse_addon_fields()
         if self._rules.get('ajax_rules'):
             self.parse_ajax_urls()
-        results = list(self.parse_results(requires=list(fields)))
+        fields = list(fields)
+        fields.extend(self._rules.get('base_fields', {}).keys())
+        results = list(self.parse_results(requires=list(set(fields))))
         return results
 
     def __call__(self):
