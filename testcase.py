@@ -157,7 +157,7 @@ class SasoupTestCase(unittest.TestCase):
             print (items['intro'][i] and items['intro'][i][0] or '').encode('utf-8')
             print
 
-    @unittest.skip('if you can')
+    # @unittest.skip('if you can')
     def test_hackernews(self):
         from sasoup.baserules import xpath, xpaths, xpathz, search, dpath, base, addon, fields, which
         hacker_news = {
@@ -166,9 +166,9 @@ class SasoupTestCase(unittest.TestCase):
             },
             'result_rules': {
                 'title': xpath("//span[@class='pagetop']/b/a"),
-                'django': search(r'\>(Django.+?)\<'),
-                'twitter': search(r'\>(Twitter.+?)\<'),
-                'elastic': xpath("//a[contains(text(),'Elasticsearch')]"),
+                'google': search(r'\>(Google.+?)\<'),
+                'html5': search(r'\>(HTML5.+?)\<'),
+                'facebook': xpath("//a[contains(text(),'Facebook')]"),
                 'titles': xpathz(
                     'news',
                     xpaths(".//td[@class='title']/a")),

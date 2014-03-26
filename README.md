@@ -21,9 +21,9 @@ hacker_news = {
     },
     'result_rules': {
         'title': xpath("//span[@class='pagetop']/b/a"),
-        'django': search(r'\>(Django.+?)\<'),
-        'twitter': search(r'\>(Twitter.+?)\<'),
-        'elastic': xpath("//a[contains(text(),'Elasticsearch')]"),
+        'google': search(r'\>(Google.+?)\<'),
+        'html5': search(r'\>(HTML5.+?)\<'),
+        'facebook': xpath("//a[contains(text(),'Facebook')]"),
         'titles': xpathz(
             'news',
             xpaths(".//td[@class='title']/a")),
@@ -46,6 +46,18 @@ html = requests.get(url).content.decode('utf-8')
 results = dict(Parser(html, hacker_news).parse())
 for key, result in results.items():
     print '{} : {}'.format(key, result)
+```
+
+output
+
+```
+google : Google Announces Massive Price Drops for Cloud Computing Services, Storage
+tsmps : ['5 hours ago  |', '3 hours ago  |', '3 hours ago  |', '1 hour ago  |', '5 hours ago  |', '10 hours ago  |', '1 hour ago  |', '9 hours ago  |', '4 hours ago  |', '32 minutes ago  |', '8 hours ago  |', '7 hours ago  |', '13 hours ago  |', '12 hours ago  |', '5 hours ago  |', '7 hours ago  |', '7 hours ago  |', '11 hours ago  |', '6 hours ago  |', '10 hours ago  |', '17 minutes ago  |', '3 hours ago  |', '10 hours ago  |', '10 hours ago  |', '10 hours ago  |', '6 hours ago  |', '10 hours ago  |', '9 hours ago  |', '5 hours ago  |']
+title : Hacker News
+titles : ['Facebook acquires Oculus VR', u'Minecraft creator says he\u2019s canceled talks for Oculus Rift version', 'Virtual Reality is going to change the world', 'Aug. 1, 2012: When Oculus Asked for Donations', 'Oculus Joins Facebook', 'Microsoft makes source code for MS-DOS and Word for Windows available to public', 'Go In Action', 'Google Announces Massive Price Drops for Cloud Computing Services, Storage', "Mistakes we've made", "Mozilla's low-overhead open source replay debugger", 'IRS Says Bitcoin Is Property', u'Show HN: HTML5 clone of OS X AirDrop \u2013 Easy P2P file transfers in a browser', u'We\u2019re Fucked, It\u2019s Over: Coming Back from the Brink', 'Clojure 1.6 released', 'The Future of Virtual Reality', 'Startups, Role Models, Risk, and Y Combinator', 'Fourier transform for dummies', 'Introductions to advanced Haskell topics', 'Nvidia Unveils First Mobile Supercomputer for Embedded Systems', 'Projects that power GitHub', 'Full Disclosure Mailing List: A Fresh Start', u'Facebook\u2019s $2B Oculus deal happened over the last five days', 'Waze Co-Founder Skips Google to Try Startup World Again', u'Game Programming Patterns \u2013 Bytecode', 'Google Cloud Platform Live', 'Spyware app turns the privacy tables on Google Glass wearers', 'Firefox OS: Tracking reflows and event loop lags', 'Clever (YC S12) Confirms $10.3M Raise From Sequoia, Paul Graham', 'Rescale (YC W12) is looking for platform software engineers', "Facebook's Privacy Dinosaur Wants to Make Sure You're Not Oversharing", 'More']
+facebook : Facebook acquires Oculus VR
+html5 : None
+points : ['870 points', '376 points', '225 points', '56 points', '204 points', '596 points', '25 points', '286 points', '76 points', '7 points', '283 points', '98 points', '289 points', '253 points', '43 points', '83 points', '74 points', '137 points', '52 points', '116 points', '3 points', '40 points', '85 points', '78 points', '70 points', '30 points', '68 points', '55 points', '24 points']
 ```
 
 ## how to write rules
