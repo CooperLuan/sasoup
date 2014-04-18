@@ -6,18 +6,9 @@ AUTHOR = 'Cooper.luan'
 AUTHOR_EMAIL = 'gc.suprs@gmail.com'
 PACKAGE = 'sasoup'
 
-
-def get_version():
-    basedir = os.path.dirname(__file__)
-    with open(os.path.join(basedir, 'sasoup/version.py')) as f:
-        locals = {}
-        exec(f.read(), locals)
-        return locals['VERSION']
-    raise RuntimeError('No version info found.')
-
 setup(
     name='sasoup',
-    version=get_version(),
+    version='0.2.5',
     description='html parser base on rules',
     keywords='sasoup',
     author=AUTHOR,
@@ -26,7 +17,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'pyyaml',
-        'lxml',
+        'pyyaml>=3.10',
+        'lxml>=3.2',
     ]
 )
