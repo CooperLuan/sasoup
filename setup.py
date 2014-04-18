@@ -5,11 +5,19 @@ from setuptools import setup, find_packages
 AUTHOR = 'Cooper.luan'
 AUTHOR_EMAIL = 'gc.suprs@gmail.com'
 PACKAGE = 'sasoup'
-VERSION = __import__('sasoup').__version__
+
+
+def get_version():
+    basedir = os.path.dirname(__file__)
+    with open(os.path.join(basedir, 'sasoup/version.py')) as f:
+        locals = {}
+        exec(f.read(), locals)
+        return locals['VERSION']
+    raise RuntimeError('No version info found.')
 
 setup(
     name='sasoup',
-    version=VERSION,
+    version=get_version(),
     description='html parser base on rules',
     keywords='sasoup',
     author=AUTHOR,
