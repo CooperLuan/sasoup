@@ -1,11 +1,11 @@
 # coding: utf-8
+import os
 from setuptools import setup, find_packages
 
 AUTHOR = 'Cooper.luan'
 AUTHOR_EMAIL = 'gc.suprs@gmail.com'
 PACKAGE = 'sasoup'
-VERSION = __import__(PACKAGE).__version__
-
+VERSION = __import__('sasoup').__version__
 
 setup(
     name='sasoup',
